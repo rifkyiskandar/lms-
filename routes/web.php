@@ -15,6 +15,12 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SemesterController;
 // --- AKHIR PERBAIKAN ---
 
+use App\Http\Controllers\Admin\CourseController; // <-- Tambah
+use App\Http\Controllers\Admin\RoomController;   // <-- Tambah
+use App\Http\Controllers\Admin\CourseClassController; // <-- Tambah
+use App\Http\Controllers\Admin\CurriculumController;
+use App\Http\Controllers\Admin\CostComponentController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -63,19 +69,30 @@ Route::middleware('auth')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         // Rute untuk User Management
-        Route::get('users', [UserController::class, 'index'])->name('users.index');
-        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::resource('users', UserController::class)->except(['show']);
 
         // Rute untuk Faculties
-        Route::get('faculties', [FacultyController::class, 'index'])->name('faculties.index');
-        Route::post('faculties', [FacultyController::class, 'store'])->name('faculties.store');
+        Route::resource('faculties', FacultyController::class)->except(['show']);
 
         // Rute untuk Majors
-        Route::get('majors', [MajorController::class, 'index'])->name('majors.index');
-        Route::get('majors/create', [MajorController::class, 'create'])->name('majors.create');
-        Route::post('majors', [MajorController::class, 'store'])->name('majors.store');
+        Route::resource('majors', MajorController::class)->except(['show']);
 
         Route::resource('semesters', SemesterController::class)->except(['show']);
+
+         // --- RUTE BARU ---
+        Route::resource('courses', CourseController::class)->except(['show']);
+        Route::resource('rooms', RoomController::class)->except(['show']);
+
+        // Kita namakan URL-nya 'classes' tapi controller-nya CourseClass
+        Route::resource('classes', CourseClassController::class)->except(['show']);
+
+        Route::get('curriculums', [CurriculumController::class, 'index'])->name('curriculums.index');
+        Route::post('curriculums', [CurriculumController::class, 'store'])->name('curriculums.store');
+        Route::delete('curriculums/{id}', [CurriculumController::class, 'destroy'])->name('curriculums.destroy');
+
+        Route::resource('cost_components', CostComponentController::class)->except(['show']);
+
+
     });
 });
 

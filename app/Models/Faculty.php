@@ -4,19 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany; // <-- TAMBAHKAN INI
 
 class Faculty extends Model
 {
     use HasFactory;
-
-    // Tentukan Primary Key kustom Anda
     protected $primaryKey = 'faculty_id';
-
-    // Kolom yang boleh diisi
     protected $fillable = ['faculty_name'];
 
+    // --- TAMBAHKAN DUA FUNGSI INI ---
+
     /**
-     * timestamps() otomatis diurus (created_at, updated_at)
-     * jadi tidak perlu $timestamps = false;
+     * Fakultas memiliki banyak Jurusan (Majors)
      */
+    public function majors(): HasMany
+    {
+        return $this->hasMany(Major::class, 'faculty_id', 'faculty_id');
+    }
+
+    /**
+     * Fakultas memiliki banyak Profil Dosen (Lecturer Profiles)
+     */
+    public function lecturerProfiles(): HasMany
+    {
+        return $this->hasMany(LecturerProfile::class, 'faculty_id', 'faculty_id');
+    }
 }

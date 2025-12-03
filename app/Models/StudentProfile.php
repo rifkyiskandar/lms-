@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StudentProfile extends Model
 {
@@ -30,8 +31,14 @@ class StudentProfile extends Model
     ];
 
     // Definisikan relasi sebaliknya (Profil ini milik User)
-    public function user()
+    public function user(): BelongsTo // <-- Perbarui tipe
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    // --- TAMBAHKAN FUNGSI RELASI INI ---
+    public function major(): BelongsTo
+    {
+        return $this->belongsTo(Major::class, 'major_id', 'major_id');
     }
 }

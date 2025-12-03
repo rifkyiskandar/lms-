@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; 
 
 class LecturerProfile extends Model
 {
@@ -24,8 +25,16 @@ class LecturerProfile extends Model
     ];
 
     // Definisikan relasi sebaliknya
-    public function user()
+    public function user(): BelongsTo // <-- Perbarui tipe
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
+
+    // --- TAMBAHKAN FUNGSI RELASI INI ---
+    public function faculty(): BelongsTo
+    {
+        return $this->belongsTo(Faculty::class, 'faculty_id', 'faculty_id');
+    }
+
+
 }

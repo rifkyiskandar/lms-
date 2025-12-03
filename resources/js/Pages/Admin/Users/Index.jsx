@@ -1,7 +1,22 @@
 import AdminLayout from '@/Layouts/AdminLayout.jsx';
-import Pagination from '@/Components/Pagination.jsx'; // <-- Import Pagination
-import { Head, Link, useForm, router } from '@inertiajs/react'; // <-- Import router
+import Pagination from '@/Components/Pagination.jsx';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
+
+// Komponen helper untuk styling (ganti dengan CSS/Tailwind Anda nanti)
+const tdStyle = { padding: '8px 12px', borderBottom: '1px solid #eee' };
+const thStyle = { padding: '8px 12px', borderBottom: '2px solid #ccc', textAlign: 'left' };
+const buttonStyle = { background: '#135bec', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.9rem' };
+const tabStyle = (active) => ({
+    padding: '0.5rem 1rem',
+    background: active ? '#135bec' : '#eee',
+    color: active ? 'white' : 'black',
+    border: 'none',
+    cursor: 'pointer'
+});
+const actionLink = { fontSize: '0.9rem', color: '#135bec', textDecoration: 'none', marginRight: '10px' };
+const deleteButton = { fontSize: '0.9rem', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0 };
+
 
 export default function Index({ users, filters, faculties, majors, semesters }) {
 
@@ -12,7 +27,7 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
         e.preventDefault();
         router.get(route('admin.users.index'), {
             search: search,
-            role: filters.role ?? 3 // Pertahankan filter role
+            role: filters.role ?? 3
         }, { preserveState: true, replace: true });
     };
 
@@ -20,40 +35,31 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
     const { data, setData, post, processing, errors, reset } = useForm({
         full_name: '',
         email: '',
-        password_hash: '',
-        password_hash_confirmation: '',
-        role_id: 3, // Default ke Student
+        password: '', // Ganti nama, controller sudah disesuaikan
+        password_confirmation: '', // Ganti nama
+        role_id: 3,
         phone_number: '',
         // Data Student
-        student_number: '',
+        // 'student_number' DIHAPUS (karena otomatis)
         faculty_id: '',
         major_id: '',
         semester_id: '',
-        batch_year: '',
+        batch_year: new Date().getFullYear().toString(), // Default tahun ini
         // Data Lecturer
-        lecturer_number: '',
-        // faculty_id sudah ada
+        // 'lecturer_number' DIHAPUS (karena otomatis)
         title: '',
         position: '',
     });
 
     const submitUser = (e) => {
         e.preventDefault();
-        // Ganti nama field password agar sesuai validasi controller
-        const postData = {
-            ...data,
-            password: data.password_hash, // Salin password_hash ke password
-            password_confirmation: data.password_hash_confirmation,
-        };
-
         post(route('admin.users.store'), {
-            data: postData, // Kirim data yang sudah disesuaikan
-            onSuccess: () => reset(),
+            onSuccess: () => reset('password', 'password_confirmation'),
         });
     };
 
     // ----- Logika Tab -----
-    const activeTab = filters.role ?? 3; // Default ke 3 (Student)
+    const activeTab = filters.role ?? 3;
 
     const changeTab = (roleId) => {
         router.get(route('admin.users.index'), { role: roleId }, {
@@ -61,6 +67,13 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
             replace: true
         });
     };
+
+    // ----- Logika Delete -----
+    const deleteUser = (user) => {
+        if (window.confirm(`Are you sure you want to delete "${user.full_name}"?`)) {
+            router.delete(route('admin.users.destroy', user.user_id));
+        }
+    }
 
     return (
         <AdminLayout>
@@ -70,12 +83,12 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
                 User Management
             </h1>
 
-            {/* ----- Form Tambah Data (Lebih Lengkap) ----- */}
+            {/* ----- Form Tambah Data (Input NIM/NIDN dihapus) ----- */}
             <form onSubmit={submitUser} style={{ marginBottom: '1.5rem', background: 'white', padding: '1rem', borderRadius: '8px' }}>
                 <h3 style={{ fontWeight: 'bold' }}>Add New User</h3>
 
                 {/* Data User Dasar */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                     <div>
                         <label>Full Name:</label><br/>
                         <input type="text" value={data.full_name} onChange={e => setData('full_name', e.target.value)} />
@@ -87,15 +100,6 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
                         {errors.email && <div style={{ color: 'red' }}>{errors.email}</div>}
                     </div>
                     <div>
-                        <label>Password:</label><br/>
-                        <input type="password" value={data.password_hash} onChange={e => setData('password_hash', e.target.value)} />
-                        {errors.password_hash && <div style={{ color: 'red' }}>{errors.password_hash}</div>}
-                    </div>
-                    <div>
-                        <label>Confirm Password:</label><br/>
-                        <input type="password" value={data.password_hash_confirmation} onChange={e => setData('password_hash_confirmation', e.target.value)} />
-                    </div>
-                    <div>
                         <label>Role:</label><br/>
                         <select value={data.role_id} onChange={e => setData('role_id', parseInt(e.target.value))}>
                             <option value={3}>Student</option>
@@ -103,21 +107,29 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
                             <option value={1}>Admin</option>
                         </select>
                     </div>
+                    <div>
+                        <label>Password:</label><br/>
+                        <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} />
+                        {errors.password && <div style={{ color: 'red' }}>{errors.password}</div>}
+                    </div>
+                    <div>
+                        <label>Confirm Password:</label><br/>
+                        <input type="password" value={data.password_confirmation} onChange={e => setData('password_confirmation', e.target.value)} />
+                    </div>
+                     <div>
+                        <label>Phone Number (Optional):</label><br/>
+                        <input type="text" value={data.phone_number} onChange={e => setData('phone_number', e.target.value)} />
+                    </div>
                 </div>
 
                 {/* Form Kondisional untuk Student */}
                 {data.role_id === 3 && (
                     <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
                         <h4 style={{ fontWeight: '600' }}>Student Profile</h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div>
-                                <label>NIM (Student Number):</label><br/>
-                                <input type="text" value={data.student_number} onChange={e => setData('student_number', e.target.value)} />
-                                {errors.student_number && <div style={{ color: 'red' }}>{errors.student_number}</div>}
-                            </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                             <div>
                                 <label>Batch Year:</label><br/>
-                                <input type="number" value={data.batch_year} onChange={e => setData('batch_year', e.target.value)} />
+                                <input type="number" value={data.batch_year} onChange={e => setData('batch_year', e.target.value)} placeholder="e.g., 2024" />
                                 {errors.batch_year && <div style={{ color: 'red' }}>{errors.batch_year}</div>}
                             </div>
                              <div>
@@ -154,11 +166,6 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
                          <h4 style={{ fontWeight: '600' }}>Lecturer Profile</h4>
                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div>
-                                <label>NIDN (Lecturer Number):</label><br/>
-                                <input type="text" value={data.lecturer_number} onChange={e => setData('lecturer_number', e.target.value)} />
-                                {errors.lecturer_number && <div style={{ color: 'red' }}>{errors.lecturer_number}</div>}
-                            </div>
-                            <div>
                                 <label>Faculty:</label><br/>
                                 <select value={data.faculty_id} onChange={e => setData('faculty_id', e.target.value)}>
                                     <option value="">-- Select Faculty --</option>
@@ -166,26 +173,24 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
                                 </select>
                                 {errors.faculty_id && <div style={{ color: 'red' }}>{errors.faculty_id}</div>}
                             </div>
+                            <div>
+                                <label>Title (Optional):</label><br/>
+                                <input type="text" value={data.title} onChange={e => setData('title', e.target.value)} placeholder="e.g., M.Kom"/>
+                            </div>
                          </div>
                     </div>
                 )}
 
-                <button type="submit" disabled={processing} style={{ background: '#135bec', color: 'white', padding: '0.5rem 1rem', marginTop: '1rem' }}>
+                <button type="submit" disabled={processing} style={{ ...buttonStyle, marginTop: '1rem' }}>
                     Save User
                 </button>
             </form>
 
             {/* ----- Navigasi Tab ----- */}
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                <button onClick={() => changeTab(3)} style={{ padding: '0.5rem 1rem', background: activeTab == 3 ? '#135bec' : '#eee', color: activeTab == 3 ? 'white' : 'black' }}>
-                    Students
-                </button>
-                <button onClick={() => changeTab(2)} style={{ padding: '0.5rem 1rem', background: activeTab == 2 ? '#135bec' : '#eee', color: activeTab == 2 ? 'white' : 'black' }}>
-                    Lecturers
-                </button>
-                <button onClick={() => changeTab(1)} style={{ padding: '0.5rem 1rem', background: activeTab == 1 ? '#135bec' : '#eee', color: activeTab == 1 ? 'white' : 'black' }}>
-                    Admins
-                </button>
+                <button onClick={() => changeTab(3)} style={tabStyle(activeTab == 3)}>Students</button>
+                <button onClick={() => changeTab(2)} style={tabStyle(activeTab == 2)}>Lecturers</button>
+                <button onClick={() => changeTab(1)} style={tabStyle(activeTab == 1)}>Admins</button>
             </div>
 
             {/* ----- Form Search ----- */}
@@ -199,26 +204,45 @@ export default function Index({ users, filters, faculties, majors, semesters }) 
                 <button type="submit">Search</button>
             </form>
 
-            {/* ----- List Data (Tabel) ----- */}
-            <div style={{ background: 'white', padding: '1rem', borderRadius: '8px' }}>
-                <table>
+            {/* ----- List Data (Tabel yang Diperbarui) ----- */}
+            <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Full Name</th>
-                            <th>Email</th>
+                            <th style={thStyle}>Name</th>
+                            {activeTab == 3 && <th style={thStyle}>NIM</th>}
+                            {activeTab == 2 && <th style={thStyle}>NIDN</th>}
+                            <th style={thStyle}>Email</th>
+                            {activeTab == 3 && <th style={thStyle}>Major</th>}
+                            {activeTab == 2 && <th style={thStyle}>Faculty</th>}
+                            <th style={thStyle}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.data.map(user => (
                             <tr key={user.user_id}>
-                                <td>{user.user_id}</td>
-                                <td>{user.full_name}</td>
-                                <td>{user.email}</td>
+                                <td style={tdStyle}>{user.full_name}</td>
+
+                                {activeTab == 3 && <td style={tdStyle}>{user.student_profile?.student_number}</td>}
+                                {activeTab == 2 && <td style={tdStyle}>{user.lecturer_profile?.lecturer_number}</td>}
+
+                                <td style={tdStyle}>{user.email}</td>
+
+                                {activeTab == 3 && <td style={tdStyle}>{user.student_profile?.major?.major_name}</td>}
+                                {activeTab == 2 && <td style={tdStyle}>{user.lecturer_profile?.faculty?.faculty_name}</td>}
+
+                                <td style={tdStyle}>
+                                    <Link href={route('admin.users.edit', user.user_id)} style={actionLink}>
+                                        Edit
+                                    </Link>
+                                    <button onClick={() => deleteUser(user)} style={deleteButton}>
+                                        Delete
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                         {users.data.length === 0 && (
-                            <tr><td colSpan="3">No users found.</td></tr>
+                            <tr><td colSpan="5" style={{...tdStyle, textAlign: 'center'}}>No users found.</td></tr>
                         )}
                     </tbody>
                 </table>

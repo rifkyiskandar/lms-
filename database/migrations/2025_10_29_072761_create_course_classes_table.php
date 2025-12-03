@@ -15,12 +15,12 @@ return new class extends Migration
             $table->id('class_id');
             $table->foreignId('course_id')->constrained('courses', 'course_id');
             $table->foreignId('lecturer_id')->constrained('users', 'user_id');
+            $table->foreignId('semester_id')->constrained('semesters', 'semester_id');
+            $table->foreignId('room_id')->constrained('rooms', 'room_id');
             $table->string('course_code');
-            $table->string('semester');
             $table->integer('year');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
-            $table->string('room');
             $table->timestamps();
         });
     }
