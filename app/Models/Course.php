@@ -14,7 +14,7 @@ class Course extends Model
 
     protected $fillable = [
         'course_code', 'course_name', 'sks',
-        'faculty_id', 'major_id', 'category', 'description'
+        'faculty_id', 'major_id', 'description'
     ];
 
     public function faculty(): BelongsTo

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('phone_number', 20)->nullable();
             $table->tinyInteger('role_id')->index();
             $table->timestamp('last_login')->nullable();
+            $table->string('profile_picture')->nullable();
+            $table->date('birth_date')->nullable();
             $table->timestamps();
         });
 

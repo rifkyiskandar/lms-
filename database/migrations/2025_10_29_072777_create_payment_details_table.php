@@ -6,24 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('payment_details', function (Blueprint $table) {
-            $table->id('payment_detail_id'); 
-            $table->foreignId('payment_id')
-                  ->constrained('payments', 'payment_id')
-                  ->cascadeOnDelete();
+            $table->id('payment_detail_id');
+
+            // Relasi ke Header Pembayaran
+            $table->foreignId('payment_id')->constrained('payments', 'payment_id')->cascadeOnDelete();
+
+            // Relasi ke Tagihan yang dibayar
             $table->foreignId('billing_id')->constrained('billings', 'billing_id');
+
+            // Jumlah yang dialokasikan untuk tagihan ini
             $table->decimal('amount_paid', 12, 2);
+
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('payment_details');

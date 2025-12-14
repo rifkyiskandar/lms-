@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail; // Kita bisa nonaktifkan ini dulu
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany; // <-- Tambahkan Import Ini
 
 class User extends Authenticatable
 {
@@ -18,60 +19,83 @@ class User extends Authenticatable
     protected $primaryKey = 'user_id';
 
     /**
-     * Atribut yang bisa diisi.
-     * Ganti 'name' bawaan Breeze dengan 'full_name'.
+     * Atribut yang bisa diisi (Mass Assignment).
      */
     protected $fillable = [
-        'full_name', // <-- Ganti 'name'
+        'full_name',
         'email',
-        'password_hash', // <-- Tambahkan ini
+        'password_hash',
         'role_id',
         'phone_number',
+        'birth_date',
+        'address',
+        'profile_picture',
+        'last_login'
     ];
 
     /**
-     * Atribut yang disembunyikan.
-     * Ganti 'password' bawaan Breeze dengan 'password_hash'.
+     * Atribut yang disembunyikan saat serialisasi.
      */
     protected $hidden = [
-        'password_hash', // <-- Ganti 'password'
+        'password_hash',
         'remember_token',
     ];
 
     /**
-     * Beri tahu Laravel di mana menemukan HASH PASSWORD Anda.
-     * Ini adalah bagian krusial agar login berfungsi.
+     * Casting tipe data otomatis.
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password_hash'     => 'hashed',
+        'birth_date'        => 'date',
+        'last_login'        => 'datetime',
+        'role_id'           => 'integer',
+        'is_active'         => 'boolean', // Tambahkan jika perlu
+    ];
+
+    /**
+     * Override password field.
      */
     public function getAuthPassword()
     {
         return $this->password_hash;
     }
 
-    /**
-     * Ganti nama kolom 'password' bawaan Breeze.
-     */
     public function getAuthPasswordName()
     {
         return 'password_hash';
     }
 
+    // --- RELASI ---
+
     /**
-     * Mendapatkan profil mahasiswa yang terkait dengan user.
+     * Relasi ke Profil Mahasiswa.
      */
     public function studentProfile(): HasOne
     {
-        // User "memiliki satu" StudentProfile
-        // 'user_id' adalah Foreign Key di tabel student_profiles
-        // 'user_id' adalah Local Key di tabel users
         return $this->hasOne(StudentProfile::class, 'user_id', 'user_id');
     }
 
     /**
-     * Mendapatkan profil dosen yang terkait dengan user.
+     * Relasi ke Profil Dosen.
      */
     public function lecturerProfile(): HasOne
     {
-        // User "memiliki satu" LecturerProfile
         return $this->hasOne(LecturerProfile::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Relasi ke Grades (Riwayat Nilai).
+     * Digunakan untuk mengambil history nilai mahasiswa.
+     */
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class, 'student_id', 'user_id');
+    }
+
+    // app/Models/User.php
+    public function profileInfo()
+    {
+        return $this->hasOne(StudentProfileInfo::class, 'user_id', 'user_id');
     }
 }

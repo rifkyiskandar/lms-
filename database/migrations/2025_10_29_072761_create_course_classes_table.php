@@ -17,10 +17,10 @@ return new class extends Migration
             $table->foreignId('lecturer_id')->constrained('users', 'user_id');
             $table->foreignId('semester_id')->constrained('semesters', 'semester_id');
             $table->foreignId('room_id')->constrained('rooms', 'room_id');
-            $table->string('course_code');
-            $table->integer('year');
-            $table->dateTime('start_time');
-            $table->dateTime('end_time');
+            $table->string('class_name', 20);
+            $table->enum('day', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
+            $table->time('start_time');
+            $table->time('end_time');
             $table->timestamps();
         });
     }

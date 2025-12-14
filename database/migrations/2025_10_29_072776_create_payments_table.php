@@ -12,18 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payments', function (Blueprint $table) {
-            $table->id('payment_id'); 
-            $table->foreignId('student_id')->constrained('users', 'user_id');
-            $table->foreignId('billing_id')->constrained('billings', 'billing_id');
-            $table->foreignId('verified_by')
-                  ->nullable()
-                  ->constrained('users', 'user_id');
-            $table->dateTime('payment_date');
-            $table->decimal('total_amount', 10, 2);
-            $table->string('proof_url');
-            $table->dateTime('verified_at')->nullable();
-            $table->enum('status', ['pending', 'verified', 'rejected'])->default('pending');
-            $table->text('note')->nullable();
+            $table->id('payment_id');
+
+            // Relasi ke Mahasiswa
+            $table->foreignId('student_id')->constrained('users', 'user_id')->cascadeOnDelete();
+
+            
+
+            // --- KOLOM KHUSUS MIDTRANS ---
+            $table->string('order_id')->unique(); // ID unik pesanan (wajib untuk Midtrans), misal: PAY-20241205-001
+            $table->string('snap_token')->nullable(); // Token untuk memunculkan popup pembayaran
+            $table->string('payment_method')->nullable(); // BCA, GOPAY, ALFAMART (diisi setelah callback)
+            $table->json('midtrans_response')->nullable(); // Simpan seluruh respon JSON dari Midtrans (buat debugging)
+
+            // Data Transaksi
+            $table->decimal('total_amount', 12, 2); // Total yang harus dibayar (gunakan 12,2 untuk aman sampai miliaran)
+            $table->timestamp('payment_date')->nullable(); // Waktu pembayaran BERHASIL (Settlement)
+
+
+            $table->enum('status', ['pending', 'paid', 'expired', 'failed'])->default('pending');
+
             $table->timestamps();
         });
     }

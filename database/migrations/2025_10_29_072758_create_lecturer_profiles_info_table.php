@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('lecturer_profiles_info', function (Blueprint $table) {
             $table->foreignId('user_id')->primary()->constrained('users', 'user_id')->cascadeOnDelete();
-            $table->string('profile_picture')->nullable();
             $table->string('office_hours')->nullable();
             $table->text('research_interest')->nullable();
             $table->text('bio')->nullable();

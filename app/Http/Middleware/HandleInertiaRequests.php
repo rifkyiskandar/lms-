@@ -33,9 +33,8 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
 
-            // Bagikan data 'auth' ke semua halaman
+            // Bagikan data 'auth'
             'auth' => [
-                // 'user' akan berisi data user jika login, atau null jika tidak
                 'user' => $request->user() ? [
                     'user_id' => $request->user()->user_id,
                     'full_name' => $request->user()->full_name,
@@ -44,7 +43,15 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
 
-            // (Anda bisa menambahkan 'flash messages' di sini nanti)
+            // --- TAMBAHAN PENTING: FLASH MESSAGES ---
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
+
+            'env' => [
+            'midtrans_client_key' => config('services.midtrans.client_key'),
+            ],
 
         ]);
     }

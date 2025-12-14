@@ -7,45 +7,39 @@ use App\Models\Major;
 use App\Models\Faculty;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Validation\Rule; // <-- Jangan lupa import ini
+use Illuminate\Validation\Rule;
 
 class MajorController extends Controller
 {
-    /**
-     * Menampilkan daftar jurusan.
-     */
     public function index(Request $request)
     {
+        // 1. Query Data
         $majors = Major::query()
-            ->with('faculty') // Eager load relasi faculty
+            ->with('faculty')
             ->when($request->input('search'), function ($query, $search) {
-                $query->where('major_name', 'like', "%{$search}%")
-                      ->orWhereHas('faculty', function ($q) use ($search) {
-                          $q->where('faculty_name', 'like', "%{$search}%");
+                $query->where(function($q) use ($search) {
+                    $q->where('major_name', 'like', "%{$search}%")
+                      ->orWhereHas('faculty', function ($q2) use ($search) {
+                          $q2->where('faculty_name', 'like', "%{$search}%");
                       });
+                });
+            })
+            ->when($request->input('faculty_id'), function ($query, $id) {
+                $query->where('faculty_id', $id);
             })
             ->paginate(10)
             ->withQueryString();
 
+        // 2. Data Dropdown
+        $faculties = Faculty::all(['faculty_id', 'faculty_name']);
+
         return Inertia::render('Admin/Majors/Index', [
             'majors' => $majors,
-            'filters' => $request->only('search')
+            'faculties' => $faculties,
+            'filters' => $request->only(['search', 'faculty_id'])
         ]);
     }
 
-    /**
-     * Menampilkan form tambah jurusan.
-     */
-    public function create()
-    {
-        return Inertia::render('Admin/Majors/Create', [
-            'faculties' => Faculty::all(['faculty_id', 'faculty_name'])
-        ]);
-    }
-
-    /**
-     * Menyimpan jurusan baru.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -55,32 +49,15 @@ class MajorController extends Controller
 
         Major::create($request->all());
 
-        return to_route('admin.majors.index');
+        return to_route('admin.majors.index')
+            ->with('success', 'Major created successfully.');
     }
 
-    /**
-     * --- BARU ---
-     * Menampilkan form edit jurusan.
-     */
-    public function edit(Major $major)
-    {
-        return Inertia::render('Admin/Majors/Edit', [
-            'major' => $major,
-            // Kirim data fakultas untuk dropdown
-            'faculties' => Faculty::all(['faculty_id', 'faculty_name'])
-        ]);
-    }
-
-    /**
-     * --- BARU ---
-     * Menyimpan perubahan jurusan.
-     */
     public function update(Request $request, Major $major)
     {
         $request->validate([
             'major_name' => [
                 'required', 'string', 'max:255',
-                // Unik, kecuali untuk ID jurusan ini sendiri
                 Rule::unique('majors')->ignore($major->major_id, 'major_id')
             ],
             'faculty_id' => 'required|exists:faculties,faculty_id'
@@ -88,20 +65,15 @@ class MajorController extends Controller
 
         $major->update($request->all());
 
-        return to_route('admin.majors.index');
+        return to_route('admin.majors.index')
+            ->with('success', 'Major updated successfully.');
     }
 
-    /**
-     * --- BARU ---
-     * Menghapus jurusan.
-     */
     public function destroy(Major $major)
     {
-        // Opsional: Cek apakah ada mahasiswa di jurusan ini sebelum hapus
-        // if ($major->students()->exists()) { ... }
-
         $major->delete();
 
-        return to_route('admin.majors.index');
+        return to_route('admin.majors.index')
+            ->with('success', 'Major deleted successfully.');
     }
 }

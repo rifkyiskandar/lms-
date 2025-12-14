@@ -18,9 +18,7 @@ return new class extends Migration
             $table->foreignId('major_id')->constrained('majors', 'major_id');
             $table->foreignId('semester_id')->constrained('semesters', 'semester_id');
             $table->year('batch_year');
-            $table->date('birth_date')->nullable();
-            $table->text('address')->nullable();
-            $table->decimal('gpa', 3, 2)->nullable();
+            $table->decimal('gpa', 3, 2)->default(0.00);
             $table->timestamps();
         });
     }

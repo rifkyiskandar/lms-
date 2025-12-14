@@ -27,31 +27,39 @@ class AuthenticatedSessionController extends Controller
      * INI ADALAH FUNGSI YANG KITA MODIFIKASI
      */
     public function store(LoginRequest $request): RedirectResponse
-{
-    // 1. Ambil kredensial yang sudah divalidasi
-    $credentials = $request->validated(); // $credentials berisi ['email', 'password']
+    {
+        // 1. Ambil kredensial yang sudah divalidasi
+        $credentials = $request->validated();
 
-    // 2. Coba login
-    if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        // 2. Coba login
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
 
-        $request->session()->regenerate();
+            $request->session()->regenerate();
 
-        // 3. Logika Pengalihan (Redirect) kustom kita
-        if (Auth::user()->role_id == 1) { // 1 = Admin
-            return redirect()->intended(route('admin.dashboard'));
+            // Ambil role user yang baru saja login
+            $role = Auth::user()->role_id;
+
+            // 3. Logika Pengalihan (Redirect)
+            if ($role == 1) { // Admin
+                return redirect()->intended(route('admin.dashboard'));
+            }
+            elseif ($role == 3) { // Student (MAHASISWA)
+                // Pastikan route 'student.dashboard' sudah ada di web.php
+                return redirect()->intended(route('student.dashboard'));
+            }
+            elseif ($role == 2) { // Lecturer (DOSEN - Nanti)
+                // return redirect()->intended(route('lecturer.dashboard'));
+                return redirect()->intended('/');
+            }
+
+            // Default redirect jika role tidak dikenal
+            return redirect()->intended('/');
         }
 
-        // Nanti tambahkan untuk Dosen & Mahasiswa
-        // if (Auth::user()->role_id == 2) { ... }
-
-        // Default redirect jika role tidak dikenal
-        return redirect()->intended('/');
-    }
-
-    // 5. Jika login gagal, kembali dengan error
-    return back()->withErrors([
-        'email' => 'The provided credentials do not match our records.',
-    ])->onlyInput('email');
+        // 4. Jika login gagal, kembali dengan error
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
     }
 
     /**

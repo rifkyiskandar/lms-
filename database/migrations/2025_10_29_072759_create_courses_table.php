@@ -18,7 +18,6 @@ return new class extends Migration
             $table->integer('sks');
             $table->foreignId('faculty_id')->constrained('faculties', 'faculty_id');
             $table->foreignId('major_id')->constrained('majors', 'major_id');
-            $table->enum('category', ['MKU', 'MKW', 'MKP', 'LAINNYA']);
             $table->text('description')->nullable();
             $table->timestamps();
         });

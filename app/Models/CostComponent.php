@@ -15,6 +15,7 @@ class CostComponent extends Model
         'component_name',
         'component_code',
         'billing_type', // Enum: PER_SKS, PER_COURSE, PER_SEMESTER, ONE_TIME
+        'amount'
     ];
 
     // Relasi ke Tuition Fees (Tarif) - Opsional, untuk validasi hapus nanti

@@ -12,9 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('rooms', function (Blueprint $table) {
-            $table->id('room_id'); 
-            $table->string('room_name');
-            $table->string('building');
+            $table->id('room_id');
+            $table->string('room_name'); // Contoh: "101", "Lab A"
+            $table->string('building');  // Contoh: "Gedung A"
+            $table->string('floor', 20); // <-- TAMBAHAN BARU (Contoh: "1", "2", "G")
             $table->integer('capacity');
             $table->timestamps();
         });

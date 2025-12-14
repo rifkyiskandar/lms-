@@ -16,8 +16,7 @@ return new class extends Migration
             $table->foreignId('major_id')->constrained('majors', 'major_id');
             $table->foreignId('course_id')->constrained('courses', 'course_id');
             $table->integer('semester');
-            $table->enum('category', ['WAJIB', 'PILIHAN', 'WAJIB_FAKULTAS']);
-            $table->year('academic_year');
+            $table->enum('category', ['MKU', 'WAJIB_PRODI', 'WAJIB_FAKULTAS', 'PILIHAN']);
             $table->timestamps();
         });
     }

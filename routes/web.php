@@ -3,62 +3,53 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth; // <-- PERBAIKAN: Import Auth facade
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-// --- Impor Controller Admin BARU Anda ---
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\MajorController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SemesterController;
-// --- AKHIR PERBAIKAN ---
-
-use App\Http\Controllers\Admin\CourseController; // <-- Tambah
-use App\Http\Controllers\Admin\RoomController;   // <-- Tambah
-use App\Http\Controllers\Admin\CourseClassController; // <-- Tambah
+use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\RoomController;
+use App\Http\Controllers\Admin\CourseClassController;
 use App\Http\Controllers\Admin\CurriculumController;
 use App\Http\Controllers\Admin\CostComponentController;
 
 
+use App\Http\Controllers\Student\BillingController; // <--- TAMBAHKAN INI
+use App\Http\Controllers\Student\PaymentController; // <--- JANGAN LUPA IMPORT INI
 /*
 |--------------------------------------------------------------------------
 | Rute Web
 |--------------------------------------------------------------------------
 */
 
-// Rute '/' bawaan Breeze
+
+
 Route::get('/', function () {
-    // Logika kustom kita untuk mengarahkan user yang sudah login
+    // Cek dulu apakah user sedang login?
     if (Auth::check()) {
-        if (Auth::user()->role_id == 1) { // 1 = Admin
+        // Definisikan variabel $role dari user yang login
+        $role = Auth::user()->role_id;
+
+        if ($role == 1) { // Admin
             return redirect()->route('admin.dashboard');
         }
-        // Nanti tambahkan redirect untuk Dosen/Mahasiswa
+        elseif ($role == 3) { // Student
+            return redirect()->route('student.dashboard');
+        }
     }
 
-    // Jika tidak login, tampilkan halaman Welcome
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    // Jika belum login, tampilkan Landing Page
+    return Inertia::render('Welcome');
 });
 
-// Rute /dashboard bawaan Breeze (kita komentari karena Admin punya dashboard sendiri)
-/*
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-*/
-
 Route::middleware('auth')->group(function () {
-    // Rute Logout (dari AuthenticatedSessionController kustom kita)
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // Rute Profile bawaan Breeze
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -68,33 +59,57 @@ Route::middleware('auth')->group(function () {
 
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Rute untuk User Management
+        // User Management
         Route::resource('users', UserController::class)->except(['show']);
 
-        // Rute untuk Faculties
-        Route::resource('faculties', FacultyController::class)->except(['show']);
+        // Faculties (Sudah Pakai Modal -> Hapus create/edit)
+        Route::resource('faculties', FacultyController::class)->except(['create', 'edit', 'show']);
 
-        // Rute untuk Majors
-        Route::resource('majors', MajorController::class)->except(['show']);
+        // Majors (Sudah Pakai Modal -> Hapus create/edit)
+        Route::resource('majors', MajorController::class)->except(['create', 'edit', 'show']);
 
-        Route::resource('semesters', SemesterController::class)->except(['show']);
+        // Semesters
+        Route::resource('semesters', SemesterController::class)->except(['create', 'edit', 'show']);
 
-         // --- RUTE BARU ---
+        // Courses
         Route::resource('courses', CourseController::class)->except(['show']);
-        Route::resource('rooms', RoomController::class)->except(['show']);
 
-        // Kita namakan URL-nya 'classes' tapi controller-nya CourseClass
+        // Rooms (Sudah Pakai Modal -> Hapus create/edit)
+        // INI PERBAIKAN UTAMANYA:
+        Route::resource('rooms', RoomController::class)->except(['create', 'edit', 'show']);
+
+        // Classes
         Route::resource('classes', CourseClassController::class)->except(['show']);
 
+        // Curriculums
         Route::get('curriculums', [CurriculumController::class, 'index'])->name('curriculums.index');
         Route::post('curriculums', [CurriculumController::class, 'store'])->name('curriculums.store');
         Route::delete('curriculums/{id}', [CurriculumController::class, 'destroy'])->name('curriculums.destroy');
 
+        // Cost Components
         Route::resource('cost_components', CostComponentController::class)->except(['show']);
+    });
 
+    Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->group(function () {
+        Route::get('dashboard', [App\Http\Controllers\Student\DashboardController::class, 'index'])->name('dashboard');
 
+        // Rute KRS
+        Route::get('krs/create', [App\Http\Controllers\Student\KRSController::class, 'index'])->name('krs.create');
+        Route::post('krs/store', [App\Http\Controllers\Student\KRSController::class, 'store'])->name('krs.store');
+        Route::delete('krs/{id}', [App\Http\Controllers\Student\KRSController::class, 'destroy'])->name('krs.destroy');
+        Route::post('krs/submit', [App\Http\Controllers\Student\KRSController::class, 'submit'])->name('krs.submit');
+
+        Route::get('bills', [BillingController::class, 'index'])->name('bills.index');
+
+        Route::post('payment/create', [PaymentController::class, 'create'])->name('payment.create');
+
+        // Di dalam group 'student'
+        Route::get('profile', [\App\Http\Controllers\Student\ProfileController::class, 'edit'])->name('profile.edit'); // Ganti namanya jadi student.profile.edit biar gak bentrok
+        Route::patch('profile', [\App\Http\Controllers\Student\ProfileController::class, 'update'])->name('profile.update');
+        Route::put('password', [\App\Http\Controllers\Student\ProfileController::class, 'updatePassword'])->name('password.update');
+
+        Route::get('catalog', [App\Http\Controllers\Student\CatalogController::class, 'index'])->name('catalog.index');
     });
 });
 
-// Ini memuat rute login/register bawaan Breeze
 require __DIR__.'/auth.php';

@@ -13,13 +13,21 @@ class CourseClass extends Model
     protected $primaryKey = 'class_id';
 
     protected $fillable = [
-        'course_id', 'lecturer_id', 'semester_id', 'room_id',
-        'course_code', 'semester', 'year', 'start_time', 'end_time'
+        'course_id',
+        'lecturer_id',
+        'semester_id',
+        'room_id',
+        'day',
+        'start_time',
+        'end_time',
+        'class_name', // <--- WAJIB ADA (Agar nama kelas A/B/C tersimpan)
     ];
 
+    // Casting tidak wajib untuk TIME, tapi jika ingin format Carbon bisa diaktifkan.
+    // Jika sering error format date, hapus saja bagian protected $casts ini.
     protected $casts = [
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'start_time' => 'string', // Ubah ke string agar aman (format H:i:s)
+        'end_time' => 'string',
     ];
 
     public function course(): BelongsTo

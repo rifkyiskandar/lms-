@@ -17,6 +17,7 @@ class CostComponentController extends Controller
                 $query->where('component_name', 'like', "%{$search}%")
                       ->orWhere('component_code', 'like', "%{$search}%");
             })
+            ->orderBy('component_code') // Urutkan berdasarkan kode
             ->paginate(10)
             ->withQueryString();
 
@@ -26,29 +27,19 @@ class CostComponentController extends Controller
         ]);
     }
 
-    public function create()
-    {
-        return Inertia::render('Admin/Finance/CostComponents/Create');
-    }
-
     public function store(Request $request)
     {
         $request->validate([
             'component_name' => 'required|string|max:255',
             'component_code' => 'required|string|max:50|unique:cost_components,component_code',
-            'billing_type' => 'required|in:PER_SKS,PER_COURSE,PER_SEMESTER,ONE_TIME',
+            'billing_type'   => 'required|in:PER_SKS,PER_COURSE,PER_SEMESTER,ONE_TIME',
+            'amount'         => 'required|numeric|min:0', // <-- Validasi Amount
         ]);
 
         CostComponent::create($request->all());
 
-        return to_route('admin.cost_components.index');
-    }
-
-    public function edit(CostComponent $costComponent)
-    {
-        return Inertia::render('Admin/Finance/CostComponents/Edit', [
-            'costComponent' => $costComponent
-        ]);
+        return to_route('admin.cost_components.index')
+            ->with('success', 'Cost component created successfully.');
     }
 
     public function update(Request $request, CostComponent $costComponent)
@@ -59,20 +50,21 @@ class CostComponentController extends Controller
                 'required', 'string', 'max:50',
                 Rule::unique('cost_components')->ignore($costComponent->cost_component_id, 'cost_component_id')
             ],
-            'billing_type' => 'required|in:PER_SKS,PER_COURSE,PER_SEMESTER,ONE_TIME',
+            'billing_type'   => 'required|in:PER_SKS,PER_COURSE,PER_SEMESTER,ONE_TIME',
+            'amount'         => 'required|numeric|min:0', // <-- Validasi Amount
         ]);
 
         $costComponent->update($request->all());
 
-        return to_route('admin.cost_components.index');
+        return to_route('admin.cost_components.index')
+            ->with('success', 'Cost component updated successfully.');
     }
 
     public function destroy(CostComponent $costComponent)
     {
-        // Validasi: Jangan hapus jika sudah dipakai di Tarif (Tuition Fee)
-        // if ($costComponent->tuitionFees()->exists()) { ... }
-
         $costComponent->delete();
-        return to_route('admin.cost_components.index');
+
+        return to_route('admin.cost_components.index')
+            ->with('success', 'Cost component deleted successfully.');
     }
 }

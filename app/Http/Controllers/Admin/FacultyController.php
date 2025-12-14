@@ -6,13 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Faculty;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Validation\Rule; // <-- Import Rule
+use Illuminate\Validation\Rule;
 
 class FacultyController extends Controller
 {
-    /**
-     * Menampilkan daftar fakultas (sudah ada)
-     */
     public function index(Request $request)
     {
         $faculties = Faculty::query()
@@ -28,9 +25,6 @@ class FacultyController extends Controller
         ]);
     }
 
-    /**
-     * Menyimpan fakultas baru (sudah ada)
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -39,54 +33,40 @@ class FacultyController extends Controller
 
         Faculty::create($request->all());
 
-        return to_route('admin.faculties.index');
+        // Tambahkan with('success') agar modal muncul di React
+        return to_route('admin.faculties.index')
+            ->with('success', 'Faculty created successfully.');
     }
 
-    /**
-     * --- BARU ---
-     * Menampilkan halaman form edit.
-     */
-    public function edit(Faculty $faculty)
-    {
-        return Inertia::render('Admin/Faculties/Edit', [
-            'faculty' => $faculty
-        ]);
-    }
-
-    /**
-     * --- BARU ---
-     * Menyimpan perubahan dari form edit.
-     */
     public function update(Request $request, Faculty $faculty)
     {
         $request->validate([
             'faculty_name' => [
                 'required', 'string', 'max:255',
-                // Pastikan nama unik, kecuali untuk ID fakultas ini sendiri
                 Rule::unique('faculties')->ignore($faculty->faculty_id, 'faculty_id')
             ]
         ]);
 
         $faculty->update($request->all());
 
-        return to_route('admin.faculties.index');
+        // Tambahkan with('success')
+        return to_route('admin.faculties.index')
+            ->with('success', 'Faculty updated successfully.');
     }
 
-    /**
-     * --- BARU ---
-     * Menghapus fakultas.
-     */
     public function destroy(Faculty $faculty)
     {
-        // Validasi Keamanan: Cek apakah fakultas ini masih punya anak (Jurusan/Dosen)
-        if ($faculty->majors()->exists() || $faculty->lecturerProfiles()->exists()) {
+        // Validasi Relasi
+        if ($faculty->majors()->exists()) { // Hapus cek lecturerProfiles jika belum ada relasinya
             return back()->withErrors([
-                'error' => 'Cannot delete faculty. It is still associated with majors or lecturers.'
+                'error' => 'Cannot delete faculty. It is still associated with majors.'
             ]);
         }
 
         $faculty->delete();
 
-        return to_route('admin.faculties.index');
+        // Tambahkan with('success')
+        return to_route('admin.faculties.index')
+            ->with('success', 'Faculty deleted successfully.');
     }
 }

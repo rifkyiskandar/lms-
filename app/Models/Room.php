@@ -11,14 +11,11 @@ class Room extends Model
 
     protected $primaryKey = 'room_id';
 
+    // Tambahkan 'floor' di sini
     protected $fillable = [
         'room_name',
         'building',
+        'floor',
         'capacity',
     ];
-
-    // Jika Anda ingin relasi ke kelas (untuk validasi hapus nanti)
-    // public function classes() {
-    //    return $this->hasMany(CourseClass::class, 'room_id');
-    // }
 }

@@ -5,129 +5,98 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CourseClass;
 use App\Models\Course;
-use App\Models\User;
-use App\Models\Room;
 use App\Models\Semester;
+use App\Models\Room;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class CourseClassController extends Controller
 {
-    /**
-     * Menampilkan daftar jadwal kelas.
-     */
     public function index(Request $request)
     {
-        $classes = CourseClass::query()
-            ->with(['course', 'lecturer', 'room', 'semester']) // Eager loading relasi
+        $classes = CourseClass::with(['course', 'semester', 'room', 'lecturer'])
             ->when($request->input('search'), function ($query, $search) {
-                // Cari berdasarkan nama mata kuliah
-                $query->whereHas('course', function($q) use ($search){
-                    $q->where('course_name', 'like', "%{$search}%")
-                      ->orWhere('course_code', 'like', "%{$search}%");
+                $query->whereHas('course', function ($q) use ($search) {
+                    $q->where('course_name', 'like', "%{$search}%");
+                })->orWhereHas('lecturer', function ($q) use ($search) {
+                    $q->where('full_name', 'like', "%{$search}%");
                 });
             })
+            ->when($request->input('semester_id'), function ($query, $id) {
+                $query->where('semester_id', $id);
+            })
+            ->when($request->input('course_id'), function ($query, $id) {
+                $query->where('course_id', $id);
+            })
+            ->orderBy('day')
+            ->orderBy('start_time') // Sesuaikan sort
             ->paginate(10)
             ->withQueryString();
 
+        // Data Dropdown
+        $courses = Course::select('course_id', 'course_name', 'course_code')->get();
+        $lecturers = User::where('role_id', 2)->select('user_id', 'full_name')->get();
+        $rooms = Room::select('room_id', 'room_name', 'building')->get();
+        $semesters = Semester::select('semester_id', 'semester_name', 'is_active')->orderBy('is_active', 'desc')->get();
+
         return Inertia::render('Admin/Classes/Index', [
             'classes' => $classes,
-            'filters' => $request->only('search')
+            'courses' => $courses,
+            'lecturers' => $lecturers,
+            'rooms' => $rooms,
+            'semesters' => $semesters,
+            'filters' => $request->only(['search', 'semester_id', 'course_id']),
         ]);
     }
 
-    /**
-     * Menampilkan form tambah jadwal.
-     */
-    public function create()
-    {
-        return Inertia::render('Admin/Classes/Create', [
-            'courses' => Course::all(['course_id', 'course_name', 'course_code']),
-            // Ambil user yang rolenya Dosen (role_id = 2)
-            'lecturers' => User::where('role_id', 2)->get(['user_id', 'full_name']),
-            'rooms' => Room::all(['room_id', 'room_name', 'capacity']),
-            // Ambil semester yang aktif saja agar relevan
-            'semesters' => Semester::where('is_active', true)->get(),
-        ]);
-    }
-
-    /**
-     * Menyimpan jadwal baru.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'course_id' => 'required|exists:courses,course_id',
+            'course_id'   => 'required|exists:courses,course_id',
             'lecturer_id' => 'required|exists:users,user_id',
             'semester_id' => 'required|exists:semesters,semester_id',
-            'room_id' => 'required|exists:rooms,room_id',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+            'room_id'     => 'required|exists:rooms,room_id',
+            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            // GANTI time_start JADI start_time (Sesuai DB)
+            'start_time'  => 'required|date_format:H:i',
+            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'class_name'  => 'nullable|string|max:50',
         ]);
 
-        // Ambil data tambahan dari relasi untuk mengisi kolom redundan (jika ada di desain)
-        $course = Course::find($request->course_id);
-        $semester = Semester::find($request->semester_id);
+        // Langsung simpan semua karena nama field sudah sama
+        CourseClass::create($request->all());
 
-        // Persiapkan data untuk disimpan
-        $data = $request->all();
-
-        // Isi kolom redundan (sesuai desain database Anda)
-        $data['course_code'] = $course->course_code;
-        $data['year'] = (int) substr($semester->academic_year, 0, 4); // Ambil tahun awal (misal 2025)
-
-        CourseClass::create($data);
-
-        return to_route('admin.classes.index');
+        return to_route('admin.classes.index')
+            ->with('success', 'Class schedule created successfully.');
     }
 
-    /**
-     * Menampilkan form edit jadwal.
-     */
-    public function edit(CourseClass $class) // Perhatikan model binding 'class' (bukan $courseClass)
-    {
-        return Inertia::render('Admin/Classes/Edit', [
-            'classSchedule' => $class, // Kirim data jadwal yang mau diedit
-            'courses' => Course::all(['course_id', 'course_name', 'course_code']),
-            'lecturers' => User::where('role_id', 2)->get(['user_id', 'full_name']),
-            'rooms' => Room::all(['room_id', 'room_name', 'capacity']),
-            'semesters' => Semester::all(), // Kirim semua semester untuk edit (bukan cuma yang aktif)
-        ]);
-    }
-
-    /**
-     * Menyimpan perubahan jadwal.
-     */
     public function update(Request $request, CourseClass $class)
     {
+        // Gunakan variabel $courseClass
+        $courseClass = $class;
+
         $request->validate([
-            'course_id' => 'required|exists:courses,course_id',
+            'course_id'   => 'required|exists:courses,course_id',
             'lecturer_id' => 'required|exists:users,user_id',
             'semester_id' => 'required|exists:semesters,semester_id',
-            'room_id' => 'required|exists:rooms,room_id',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+            'room_id'     => 'required|exists:rooms,room_id',
+            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'start_time'  => 'required|date_format:H:i',
+            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'class_name'  => 'nullable|string|max:50',
         ]);
 
-        // Update data redundan juga jika berubah
-        $course = Course::find($request->course_id);
-        $semester = Semester::find($request->semester_id);
+        $courseClass->update($request->all());
 
-        $data = $request->all();
-        $data['course_code'] = $course->course_code;
-        $data['year'] = (int) substr($semester->academic_year, 0, 4);
-
-        $class->update($data);
-
-        return to_route('admin.classes.index');
+        return to_route('admin.classes.index')
+            ->with('success', 'Class schedule updated successfully.');
     }
 
-    /**
-     * Menghapus jadwal.
-     */
-    public function destroy(CourseClass $class)
+    public function destroy($id)
     {
-        $class->delete();
-        return to_route('admin.classes.index');
+        CourseClass::destroy($id);
+        return to_route('admin.classes.index')
+            ->with('success', 'Class schedule deleted successfully.');
     }
 }

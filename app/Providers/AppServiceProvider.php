@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL; // <--- JANGAN LUPA IMPORT INI
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +20,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Vite::prefetch(concurrency: 3);
+        // Paksa HTTPS jika sedang menggunakan Ngrok atau Production
+        if (config('app.env') === 'production' || str_contains(config('app.url'), 'ngrok')) {
+            URL::forceScheme('https');
+        }
+
+        // Atau untuk testing sekarang, tembak langsung aja (opsional):
+        // URL::forceScheme('https');
     }
 }
