@@ -61,29 +61,36 @@ const CatalogIndex: React.FC<CatalogProps> = ({ auth, catalog }) => {
   const getStatusBadgeVariant = (status: string, grade: string) => {
     if (status === 'Passed') return 'success';
     if (status === 'Taken') return 'primary';
-    // Jika Available tapi ada grade (berarti mengulang)
+    // Available but has a grade (means Retake)
     if (status === 'Available' && grade !== '-') return 'warning';
     return 'gray';
   };
 
+  // Helper to translate DB Enum to English UI
   const formatCategory = (cat: string) => {
-      return cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+      const map: Record<string, string> = {
+          'WAJIB_PRODI': 'Major Compulsory',
+          'WAJIB_FAKULTAS': 'Faculty Compulsory',
+          'MKU': 'General Course',
+          'PILIHAN': 'Elective'
+      };
+      return map[cat] || cat.replace(/_/g, ' ');
   };
 
   return (
     <StudentLayout user={auth.user}>
-        <Head title="Katalog Mata Kuliah" />
+        <Head title="Course Catalog" />
 
         <div className="flex flex-col gap-6 animate-fade-in-up">
         <PageHeader
-            title="Katalog Mata Kuliah"
-            subtitle="Roadmap kurikulum lengkap Program Studi Anda."
+            title="Course Catalog"
+            subtitle="Complete curriculum roadmap for your Study Program."
         />
 
         <SearchFilterBar
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
-            placeholder="Cari kode atau nama mata kuliah..."
+            placeholder="Search by code or course name..."
         />
 
         <div className="space-y-4">
@@ -108,7 +115,7 @@ const CatalogIndex: React.FC<CatalogProps> = ({ auth, catalog }) => {
                                     Semester {sem}
                                 </h3>
                             </div>
-                            <Badge variant="gray">{totalSks} SKS Total</Badge>
+                            <Badge variant="gray">{totalSks} Total Credits</Badge>
                         </button>
 
                         {isExpanded && (
@@ -117,10 +124,10 @@ const CatalogIndex: React.FC<CatalogProps> = ({ auth, catalog }) => {
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-gray-50/50 dark:bg-background-dark/30 border-b border-gray-100 dark:border-gray-800">
-                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Kode</th>
-                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Mata Kuliah</th>
-                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">SKS</th>
-                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Tipe</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Code</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Course Name</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Credits</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
                                                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
                                             </tr>
                                         </thead>
@@ -136,9 +143,9 @@ const CatalogIndex: React.FC<CatalogProps> = ({ auth, catalog }) => {
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <Badge variant={getStatusBadgeVariant(course.status, course.grade)}>
-                                                                {course.status === 'Passed' ? `Lulus (${course.grade})` :
-                                                                 course.status === 'Taken' ? 'Sedang Diambil' :
-                                                                 course.grade !== '-' ? `Mengulang (${course.grade})` : 'Belum Diambil'}
+                                                                {course.status === 'Passed' ? `Passed (${course.grade})` :
+                                                                 course.status === 'Taken' ? 'In Progress' :
+                                                                 course.grade !== '-' ? `Retake (${course.grade})` : 'Available'}
                                                             </Badge>
                                                         </td>
                                                     </tr>
@@ -146,7 +153,7 @@ const CatalogIndex: React.FC<CatalogProps> = ({ auth, catalog }) => {
                                             ) : (
                                                 <tr>
                                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500 italic">
-                                                        Belum ada mata kuliah terdaftar untuk semester ini.
+                                                        No courses listed for this semester.
                                                     </td>
                                                 </tr>
                                             )}

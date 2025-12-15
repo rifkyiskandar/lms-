@@ -83,19 +83,13 @@ class DatabaseSeeder extends Seeder
         $cKalkulus = Course::create(['course_code' => 'MAT101', 'course_name' => 'Kalkulus I', 'sks' => 4, 'faculty_id' => $faculty->faculty_id, 'major_id' => $major->major_id]);
         Curriculum::create(['major_id' => $major->major_id, 'course_id' => $cKalkulus->course_id, 'semester' => 1, 'category' => 'WAJIB_FAKULTAS']);
 
-        Grade::create([
-            'student_id' => $student->user_id, 'course_id' => $cKalkulus->course_id, 'semester_id' => $sem1->semester_id,
-            'grade_char' => 'E', 'grade_point' => 0.00, 'is_passed' => false // GAGAL
-        ]);
+        
 
         // Algoritma
         $cAlgo = Course::create(['course_code' => 'CS101', 'course_name' => 'Algoritma & Pemrograman', 'sks' => 4, 'faculty_id' => $faculty->faculty_id, 'major_id' => $major->major_id]);
         Curriculum::create(['major_id' => $major->major_id, 'course_id' => $cAlgo->course_id, 'semester' => 1, 'category' => 'WAJIB_PRODI']);
 
-        Grade::create([
-            'student_id' => $student->user_id, 'course_id' => $cAlgo->course_id, 'semester_id' => $sem1->semester_id,
-            'grade_char' => 'E', 'grade_point' => 0.00, 'is_passed' => false // GAGAL
-        ]);
+
 
 
         // --- B. SEMESTER 2 (Pancasila -> LULUS) ---
@@ -103,10 +97,7 @@ class DatabaseSeeder extends Seeder
         $cPancasila = Course::create(['course_code' => 'MKU001', 'course_name' => 'Pancasila', 'sks' => 2, 'faculty_id' => $faculty->faculty_id, 'major_id' => $major->major_id]);
         Curriculum::create(['major_id' => $major->major_id, 'course_id' => $cPancasila->course_id, 'semester' => 2, 'category' => 'MKU']);
 
-        Grade::create([
-            'student_id' => $student->user_id, 'course_id' => $cPancasila->course_id, 'semester_id' => $sem2->semester_id,
-            'grade_char' => 'A', 'grade_point' => 4.00, 'is_passed' => true // LULUS
-        ]);
+
 
 
         // --- C. SEMESTER 3 (Artificial Intelligence -> TARGET) ---

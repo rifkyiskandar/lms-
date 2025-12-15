@@ -48,8 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, onNavigate }) => {
                 <Icon name="school" className="text-2xl" />
             </div>
             <div className="flex flex-col overflow-hidden">
-              <h1 className="text-gray-900 dark:text-white text-base font-bold leading-normal truncate">Uni LMS</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal truncate">Admin Panel</p>
+              <h1 className="text-gray-900 dark:text-white text-base font-bold leading-normal truncate">StudyFlow</h1>
             </div>
           </div>
 
@@ -139,13 +138,6 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, onNavigate }) => {
 
         {/* Footer Links */}
         <div className="flex flex-col gap-1 pt-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            onClick={() => onNavigate('help')}
-            className="flex w-full items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors group"
-          >
-            <Icon name="help_center" className="text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-            <p className="text-sm font-medium leading-normal group-hover:text-gray-900 dark:group-hover:text-white">Help Center</p>
-          </button>
           <button
             onClick={() => onNavigate('logout')}
             className="flex w-full items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors group"

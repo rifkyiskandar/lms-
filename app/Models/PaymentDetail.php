@@ -21,4 +21,10 @@ class PaymentDetail extends Model
     {
         return $this->belongsTo(Billing::class, 'billing_id');
     }
+
+    public function payment()
+    {
+        // Relasi ke tabel induk 'payments' untuk cek status transaksi
+        return $this->belongsTo(Payment::class, 'payment_id', 'payment_id');
+    }
 }

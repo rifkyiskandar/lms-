@@ -36,4 +36,9 @@ class Billing extends Model
     {
         return $this->belongsTo(Semester::class, 'semester_id');
     }
+
+    public function paymentDetails()
+    {
+        return $this->hasMany(PaymentDetail::class, 'billing_id', 'billing_id');
+    }
 }

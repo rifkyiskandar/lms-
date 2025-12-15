@@ -64,44 +64,41 @@ class ProfileController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // 1. Validasi (Semua nullable agar flexible partial update)
+        // 1. Validasi
         $request->validate([
             'phone' => 'nullable|string|max:20',
             'nickname' => 'nullable|string|max:50',
             'dreamJob' => 'nullable|string|max:100',
             'goals' => 'nullable|string',
             'quote' => 'nullable|string',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi Foto
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // 2. LOGIC KHUSUS UPLOAD FOTO
+        // 2. LOGIC UPLOAD FOTO
         if ($request->hasFile('profile_picture')) {
-            // A. Hapus foto lama jika ada (dan bukan dummy url)
+            // Hapus foto lama
             if ($user->profile_picture) {
-                // Ubah URL storage kembali ke path relative disk
                 $oldPath = str_replace('/storage/', '', $user->profile_picture);
                 if (Storage::disk('public')->exists($oldPath)) {
                     Storage::disk('public')->delete($oldPath);
                 }
             }
 
-            // B. Simpan foto baru
+            // Simpan foto baru
             $path = $request->file('profile_picture')->store('profile_pictures', 'public');
 
-            // C. Update database
+            // Update kolom di DB
             $user->update(['profile_picture' => '/storage/' . $path]);
 
-            // D. Return early (Penting: agar tidak lanjut update field lain dengan data kosong)
-            return back()->with('success', 'Profile picture updated successfully.');
+            // HAPUS "return back()" DISINI AGAR KODE LANJUT KE BAWAH
         }
 
-        // 3. Logic Update Data Teks (Hanya jika field dikirim)
+        // 3. Logic Update Data Teks
         if ($request->has('phone')) {
             $user->update(['phone_number' => $request->input('phone')]);
         }
 
-        // 4. Update/Create Profile Info
-        // Kita gunakan $request->input() agar aman
+        // 4. Update Profile Info
         $user->profileInfo()->updateOrCreate(
             ['user_id' => $user->user_id],
             [
