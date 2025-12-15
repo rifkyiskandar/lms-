@@ -83,7 +83,7 @@ class DatabaseSeeder extends Seeder
         $cKalkulus = Course::create(['course_code' => 'MAT101', 'course_name' => 'Kalkulus I', 'sks' => 4, 'faculty_id' => $faculty->faculty_id, 'major_id' => $major->major_id]);
         Curriculum::create(['major_id' => $major->major_id, 'course_id' => $cKalkulus->course_id, 'semester' => 1, 'category' => 'WAJIB_FAKULTAS']);
 
-        
+
 
         // Algoritma
         $cAlgo = Course::create(['course_code' => 'CS101', 'course_name' => 'Algoritma & Pemrograman', 'sks' => 4, 'faculty_id' => $faculty->faculty_id, 'major_id' => $major->major_id]);

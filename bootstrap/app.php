@@ -35,7 +35,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'midtrans/webhook' // Izinkan Midtrans akses tanpa token CSRF
         ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            \App\Http\Middleware\SetLocale::class, // <--- TAMBAHKAN BARIS INI
+        ]);
+
+
     })
+
+    
+
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

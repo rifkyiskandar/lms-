@@ -1,113 +1,152 @@
 import React from 'react';
-import { Head } from '@inertiajs/react'; // Jangan lupa Head untuk title tab browser
-import StatsCard from './StatsCard';
-import RecentActivity from './RecentActivity';
+import { Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { PageHeader, Card } from '../../Components/ReusableUI';
+import StatsCard from './StatsCard';
+import { PageHeader, Card, Badge } from '../../Components/ReusableUI';
+import Icon from '../../Components/Icon';
+// 1. Import Hook Translation
+import useTranslation from '@/Hooks/UseTranslation';
 
-// Interface Props dari Controller
+// Interface Data Pembayaran
+interface PaymentItem {
+    id: number;
+    order_id: string;
+    student_name: string;
+    amount: number;
+    status: string;
+    date: string;
+}
+
+// Interface Props
 interface DashboardProps {
     auth: any;
     stats: {
         students: { total: number; new_this_month: number; };
         lecturers: { total: number; };
         courses: { total: number; };
-        revenue: { total: number; this_month: number; };
     };
-    recent_activities: any[]; // Tipe detail ada di RecentActivity.tsx
+    recentPayments: PaymentItem[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ auth, stats, recent_activities }) => {
+const Dashboard: React.FC<DashboardProps> = ({ auth, stats, recentPayments }) => {
+  // 2. Panggil Hook
+  const { t } = useTranslation();
 
-  // Helper Format Rupiah
-  const formatCurrency = (amount: number) => {
-     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+  const formatRupiah = (val: number) =>
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const getStatusVariant = (status: string) => {
+      switch (status) {
+          case 'settlement': case 'capture': case 'paid': return 'success';
+          case 'pending': return 'warning';
+          case 'deny': case 'expire': case 'cancel': return 'error';
+          default: return 'gray';
+      }
   };
 
   return (
     <AdminLayout user={auth.user}>
-      <Head title="Dashboard" />
+      {/* 3. Gunakan t() untuk judul halaman */}
+      <Head title={t('Dashboard')} />
 
       <div className="space-y-8 animate-fade-in-up">
         {/* Page Heading */}
         <PageHeader
-          title="Dashboard"
-          subtitle={`Welcome back, ${auth.user.full_name}`}
+          title={t('Dashboard')}
+          subtitle={`${t('Welcome back')}, ${auth.user.full_name}`}
         />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard
-            title="Total Students"
+            title={t('Total Students')}
             value={stats.students.total.toLocaleString()}
-            trend={`+${stats.students.new_this_month} this month`}
-            trendType="positive"
+            // Contoh kombinasi variabel dan translasi
+            trend={stats.students.new_this_month > 0
+                ? `+${stats.students.new_this_month} ${t('this month')}`
+                : t('No new students')}
+            trendType={stats.students.new_this_month > 0 ? "positive" : "neutral"}
             icon="school"
             color="info"
           />
           <StatsCard
-            title="Total Instructors"
+            title={t('Total Instructors')}
             value={stats.lecturers.total.toLocaleString()}
-            trend="Active Faculty"
+            trend={t('Active Faculty')}
             trendType="neutral"
             icon="cast_for_education"
             color="warning"
           />
           <StatsCard
-            title="Active Courses"
-            value={stats.courses.total}
-            trend="Current Curriculum"
+            title={t('Active Courses')}
+            value={stats.courses.total.toString()}
+            trend={t('Current Curriculum')}
             trendType="neutral"
             icon="menu_book"
             color="primary"
           />
-          <StatsCard
-            title="Total Revenue"
-            value={formatCurrency(stats.revenue.total)}
-            trend={`+${formatCurrency(stats.revenue.this_month)} this month`}
-            trendType="positive"
-            icon="payments"
-            color="success"
-          />
         </div>
 
-        {/* Activity Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* Recent Activity Panel (Lebar 2 Kolom) */}
-          <div className="lg:col-span-2">
-              <Card className="p-6 h-full">
-                <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Payments</h3>
-                  <button className="text-sm text-primary hover:text-primary/80 font-medium">View Report</button>
+        {/* Recent Payments Section */}
+        <div className="grid grid-cols-1 gap-6">
+            <Card className="p-0 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        {t('Recent Payments')}
+                    </h3>
                 </div>
-                <RecentActivity activities={recent_activities} />
-              </Card>
-          </div>
 
-          {/* Quick Actions / Info Panel (Lebar 1 Kolom) */}
-           <div className="lg:col-span-1">
-               <Card className="p-6 h-full bg-gradient-to-br from-primary to-primary/80 text-white border-none">
-                   <h3 className="text-lg font-bold mb-2">Quick Actions</h3>
-                   <p className="text-primary-100 text-sm mb-6">Shortcuts for common administrative tasks.</p>
-
-                   <div className="flex flex-col gap-3">
-                       <button className="bg-white/20 hover:bg-white/30 transition-colors p-3 rounded-lg text-left flex items-center gap-3 text-sm font-medium backdrop-blur-sm">
-                           <div className="p-1 bg-white text-primary rounded"><span className="material-symbols-outlined text-lg block">person_add</span></div>
-                           Register New Student
-                       </button>
-                       <button className="bg-white/20 hover:bg-white/30 transition-colors p-3 rounded-lg text-left flex items-center gap-3 text-sm font-medium backdrop-blur-sm">
-                           <div className="p-1 bg-white text-primary rounded"><span className="material-symbols-outlined text-lg block">post_add</span></div>
-                           Create Invoice
-                       </button>
-                       <button className="bg-white/20 hover:bg-white/30 transition-colors p-3 rounded-lg text-left flex items-center gap-3 text-sm font-medium backdrop-blur-sm">
-                           <div className="p-1 bg-white text-primary rounded"><span className="material-symbols-outlined text-lg block">campaign</span></div>
-                           Make Announcement
-                       </button>
-                   </div>
-               </Card>
-           </div>
-
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-gray-50 dark:bg-gray-800/50">
+                            <tr>
+                                {/* Translate Header Tabel */}
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">{t('Order ID')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">{t('Student')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">{t('Date')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">{t('Status')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase text-right">{t('Amount')}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#19222c]">
+                            {recentPayments && recentPayments.length > 0 ? (
+                                recentPayments.map((payment) => (
+                                    <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="px-6 py-4 text-sm font-mono text-gray-500">{payment.order_id}</td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white">{payment.student_name}</p>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                            {formatDate(payment.date)}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Badge variant={getStatusVariant(payment.status)} className="uppercase text-[10px]">
+                                                {payment.status}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-6 py-4 text-right font-bold text-gray-900 dark:text-white font-mono">
+                                            {formatRupiah(payment.amount)}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-20 text-center flex flex-col items-center justify-center text-gray-400 italic w-full">
+                                        <Icon name="history" className="text-4xl mb-2 opacity-20" />
+                                        <span>{t('No recent payment activity found.')}</span>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
         </div>
       </div>
     </AdminLayout>

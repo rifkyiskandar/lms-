@@ -3,6 +3,7 @@ import { usePage, router } from '@inertiajs/react';
 import { User, NavItem } from '../types';
 import Sidebar from '@/Components/Sidebar';
 import Header from '@/Components/Header';
+import useTranslation from '@/Hooks/UseTranslation'; // <--- 1. Import Hook Translation
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -21,13 +22,16 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     const { props, component } = usePage<PageProps>();
     const currentUser = user || props.auth.user;
 
-    // --- LOGIC THEME BARU ---
-    // 1. Default state: Cek localStorage dulu, kalau kosong baru cek system preference
+    // 2. Ambil locale dari Props Inertia (dikirim dari Middleware Laravel)
+    const { locale } = usePage<any>().props;
+
+    // 3. Panggil Hook Translation untuk menerjemahkan Sidebar
+    const { t } = useTranslation();
+
+    // --- LOGIC THEME ---
     const [isDark, setIsDark] = useState(() => {
         if (typeof window !== 'undefined') {
-            // Cek penyimpanan browser
             const savedTheme = localStorage.getItem('theme');
-            // Jika user pernah set 'dark', atau belum pernah set tapi laptopnya dark mode
             if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 return true;
             }
@@ -35,100 +39,97 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         return false;
     });
 
-    const [language, setLanguage] = useState<'en' | 'id'>('en');
-
-    // 2. Effect untuk menerapkan class 'dark' ke tag <html>
+    // Effect Theme
     useEffect(() => {
         const root = window.document.documentElement;
         if (isDark) {
             root.classList.add('dark');
-            localStorage.setItem('theme', 'dark'); // Simpan pilihan user
+            localStorage.setItem('theme', 'dark');
         } else {
             root.classList.remove('dark');
-            localStorage.setItem('theme', 'light'); // Simpan pilihan user
+            localStorage.setItem('theme', 'light');
         }
     }, [isDark]);
 
-    // 3. Fungsi Toggle yang dipanggil dari Header
     const toggleTheme = () => {
         setIsDark(prev => !prev);
     };
 
-    // --- Definisi Menu Navigasi ---
+    // --- Definisi Menu Navigasi (Dengan Translation) ---
     const navItems: NavItem[] = useMemo(() => [
         {
             id: route('admin.dashboard'),
-            label: 'Dashboard',
+            label: t('Dashboard'), // <--- Gunakan t()
             icon: 'dashboard',
             active: component === 'Admin/Dashboard'
         },
         {
             id: route('admin.users.index'),
-            label: 'User Management',
+            label: t('User Management'), // <--- Gunakan t()
             icon: 'group',
             active: component.startsWith('Admin/Users')
         },
         {
-            label: 'Academics',
+            label: t('Academics'), // <--- Gunakan t()
             icon: 'school',
             children: [
                 {
                     id: route('admin.faculties.index'),
-                    label: 'Faculties',
+                    label: t('Faculties'),
                     icon: 'domain',
                     active: component.startsWith('Admin/Faculties')
                 },
                 {
                     id: route('admin.majors.index'),
-                    label: 'Majors',
+                    label: t('Majors'),
                     icon: 'school',
                     active: component.startsWith('Admin/Majors')
                 },
                 {
                     id: route('admin.courses.index'),
-                    label: 'Courses',
+                    label: t('Courses'),
                     icon: 'menu_book',
                     active: component.startsWith('Admin/Courses')
                 },
                 {
                     id: route('admin.rooms.index'),
-                    label: 'Rooms',
+                    label: t('Rooms'),
                     icon: 'meeting_room',
                     active: component.startsWith('Admin/Rooms')
                 },
                 {
                     id: route('admin.classes.index'),
-                    label: 'Classes',
+                    label: t('Classes'),
                     icon: 'class',
                     active: component.startsWith('Admin/Classes')
                 },
                 {
                     id: route('admin.semesters.index'),
-                    label: 'Semesters',
+                    label: t('Semesters'),
                     icon: 'calendar_month',
                     active: component.startsWith('Admin/Semesters')
                 },
                 {
                     id: route('admin.curriculums.index'),
-                    label: 'Curriculums',
+                    label: t('Curriculums'),
                     icon: 'account_tree',
                     active: component.startsWith('Admin/Curriculums')
                 }
             ]
         },
         {
-            label: 'Finance',
+            label: t('Finance'), // <--- Gunakan t()
             icon: 'payments',
             children: [
                 {
                     id: route('admin.cost_components.index'),
-                    label: 'Cost Components',
+                    label: t('Cost Components'),
                     icon: 'monetization_on',
                     active: component.startsWith('Admin/Finance/CostComponents')
                 }
             ]
         }
-    ], [component]);
+    ], [component, locale]); // Tambahkan locale ke dependency array agar re-render saat bahasa ganti
 
     // --- Handler Navigasi ---
     const handleNavigate = (destination: string) => {
@@ -153,9 +154,20 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                     onNavigate={handleNavigate}
                     isDark={isDark}
                     toggleTheme={toggleTheme}
-                    language={language}
-                    toggleLanguage={() => setLanguage(lang => lang === 'en' ? 'id' : 'en')}
-                    user={{ name: currentUser.full_name, avatar: '' }}
+
+                    // 4. Masukkan locale dari server (source of truth)
+                    language={locale || 'en'}
+
+                    // Fungsi dummy (karena logic sudah dihandle di dalam Header.tsx)
+                    toggleLanguage={() => {}}
+
+                    // 5. Update User Prop agar Header bisa deteksi Admin
+                    user={{
+                        name: currentUser.full_name,
+                        avatar: currentUser.profile_picture || '',
+                        role: (currentUser as any).role,     // Pastikan field ini ada dari middleware
+                        role_id: (currentUser as any).role_id // Pastikan field ini ada dari middleware
+                    }}
                 />
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

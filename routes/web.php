@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\DashboardController;
@@ -111,5 +112,12 @@ Route::middleware('auth')->group(function () {
         Route::get('catalog', [App\Http\Controllers\Student\CatalogController::class, 'index'])->name('catalog.index');
     });
 });
+
+Route::get('language/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'id'])) {
+        Session::put('locale', $locale);
+    }
+    return back();
+})->name('language.switch');
 
 require __DIR__.'/auth.php';

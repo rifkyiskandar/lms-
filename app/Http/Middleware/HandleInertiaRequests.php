@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
-use Inertia\Middleware; // <-- Pastikan ini di-import
-use Illuminate\Support\Facades\Auth; // <-- Pastikan ini di-import
+use Inertia\Middleware;
+use Illuminate\Support\Facades\Auth;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -13,7 +13,7 @@ class HandleInertiaRequests extends Middleware
      *
      * @var string
      */
-    protected $rootView = 'app'; // <-- Pastikan ini 'app' (untuk app.blade.php)
+    protected $rootView = 'app';
 
     /**
      * Determine the current asset version.
@@ -25,33 +25,58 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Define the props that are shared by default.
-     * INI ADALAH FUNGSI YANG PALING PENTING
-     *
-     * @return array<string, mixed>
      */
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
 
-            // Bagikan data 'auth'
+            // 1. DATA USER (Existing)
             'auth' => [
                 'user' => $request->user() ? [
                     'user_id' => $request->user()->user_id,
                     'full_name' => $request->user()->full_name,
                     'email' => $request->user()->email,
                     'role_id' => $request->user()->role_id,
+                    // Tips: Tambahkan mapping ini agar Header.tsx tidak error membaca role/avatar
+                    'role' => match($request->user()->role_id) {
+                        1 => 'Admin',
+                        2 => 'Lecturer',
+                        3 => 'Student',
+                        default => 'User'
+                    },
+                    'avatar' => $request->user()->profile_picture,
                 ] : null,
             ],
 
-            // --- TAMBAHAN PENTING: FLASH MESSAGES ---
+            // 2. FLASH MESSAGES (Existing)
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
 
+            // 3. ENV VARIABLES (Existing)
             'env' => [
-            'midtrans_client_key' => config('services.midtrans.client_key'),
+                'midtrans_client_key' => config('services.midtrans.client_key'),
             ],
+
+            // --- [BARU] 4. LOCALIZATION CONFIGURATION ---
+
+            // A. Kirim kode bahasa saat ini (en/id)
+            'locale' => app()->getLocale(),
+
+            // B. Kirim seluruh kamus kata (JSON) ke frontend
+            'translations' => function () {
+                $locale = app()->getLocale();
+                // Mencari file di folder: lang/id.json
+                $path = lang_path("{$locale}.json");
+
+                if (file_exists($path)) {
+                    return json_decode(file_get_contents($path), true);
+                }
+
+                return []; // Return array kosong jika file tidak ditemukan
+            },
+            // --------------------------------------------
 
         ]);
     }
